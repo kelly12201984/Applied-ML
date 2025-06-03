@@ -1,0 +1,154 @@
+---
+title: "digit-classification-decision-tree-naive-bayes"
+author: "Kelly_Arseneau"
+date: "2024-05-31"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Load necessary libraries
+library(readr)
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(e1071)
+
+
+```
+```{r}
+# Load the MNIST data
+train_data <- read_csv("C:/Users/kelly/Downloads/digit_train.csv")
+
+
+```
+```{r}
+# Convert labels to factors in the training data
+train_data$label <- as.factor(train_data$label)
+
+# Take a smaller sample for training and validation
+set.seed(123)
+sample_index <- sample(1:nrow(train_data), 10000)  # Using 10,000 samples for quicker training
+train_sample <- train_data[sample_index, ]
+
+# Split the sampled data into training and validation sets
+trainIndex <- createDataPartition(train_sample$label, p = 0.8, list = FALSE)
+train_set <- train_sample[trainIndex, ]
+validation_set <- train_sample[-trainIndex, ]
+```
+
+```{r}
+# Train the decision tree model with 3-fold cross-validation and limited depth
+set.seed(4321)
+train_control <- trainControl(method = "cv", number = 3)
+dt_model <- train(label ~ ., data = train_set, method = "rpart", 
+                  trControl = train_control, 
+                  tuneLength = 10,
+                  control = rpart.control(maxdepth = 10, cp = 0.01))
+
+# Print the model summary
+print(dt_model)
+```
+
+
+```{r}
+#install.packages("rattle")
+library(rattle)
+# Visualize the decision tree
+fancyRpartPlot(dt_model$finalModel, sub = "Classification Decision Tree - MNIST training data (Sample)")
+
+```
+Interpretation of Decision
+The decision tree model was trained and evaluated using a 3-fold cross-validation approach on a sample of 10,000 observations from the MNIST dataset. The final model used a complexity parameter (cp) of 0.01717342, achieving an overall accuracy of 59.72%.
+
+Pixel intensity thresholds were used to classify handwritten digits in a decision tree trained on a 10,000-observation MNIST sample. Early splits (e.g., pixel409, pixel434) reflect the most influential image regions — likely corresponding to defining strokes in certain digits. Digits such as '0' and '1' were classified with higher confidence, while '3' and '5' appeared across multiple branches, indicating visual ambiguity and overlapping features.
+
+The model achieved moderate accuracy (~59.7%) and offers clear interpretability. In contexts where transparency is prioritized — such as form digitization or quality control — this approach provides immediate value and explainability.
+
+For improved performance, the next step involves exploring more advanced models like Random Forests or Convolutional Neural Networks, which can better handle complex pixel interactions and nuanced variation in handwriting while maintaining (or strategically sacrificing) interpretability depending on the application. NOTE: Clear interpretability (as with decision trees) is valuable for debugging, understanding data structure, and communicating findings to non-technical teams — even if the model’s performance isn't high enough to deploy.
+```{r}
+# Evaluate Decision Tree on validation set
+dt_predictions <- predict(dt_model, validation_set)
+dt_conf_matrix <- confusionMatrix(dt_predictions, validation_set$label)
+
+# Print confusion matrices and accuracy
+print(dt_conf_matrix)
+```
+
+```{r}
+# Remove labels from the validation set
+validation_nolabel <- validation_set[, -which(names(validation_set) == "label")]
+
+# Ensure all pixel columns are numeric
+validation_nolabel <- as.data.frame(lapply(validation_nolabel, as.numeric))
+
+# Train the Naïve Bayes model using the existing train_set
+NB_e1071 <- naiveBayes(label ~ ., data = train_set, na.action = na.pass)
+
+# Test the model using the validation set
+NB_e1071_Pred <- predict(NB_e1071, validation_nolabel)
+
+# Ensure the predicted labels are factors with the same levels as the true labels
+NB_e1071_Pred <- factor(NB_e1071_Pred, levels = levels(validation_set$label))
+
+# Evaluate Naïve Bayes on validation set
+nb_conf_matrix <- confusionMatrix(NB_e1071_Pred, validation_set$label)
+
+# Print confusion matrices and accuracy
+print(nb_conf_matrix)
+
+# Calculate and print accuracy
+nb_accuracy <- round(nb_conf_matrix$overall['Accuracy'] * 100, 2)
+print(nb_accuracy)
+
+# Plot the predictions
+plot(NB_e1071_Pred, ylab = "Density", main = "Naive Bayes Plot", col='#F76900')
+
+```
+Interpretation of Results
+
+Confusion Matrix Summary:
+
+The model performed best on digit '1', with a sensitivity of 82.59% and a specificity of 96.05%.
+The model struggled the most with digit '5', showing a sensitivity of 26.63% and a specificity of 94.10%.
+The overall kappa statistic was 0.5519, indicating moderate agreement between the predicted and actual labels.
+Model Performance:
+
+Sensitivity (Recall): Measures the proportion of actual positives that are correctly identified. For example, digit '0' had a sensitivity of 77.60%, meaning the model correctly identified 77.60% of all '0' digits.
+Specificity: Measures the proportion of actual negatives that are correctly identified. For digit '1', the specificity was 96.05%, indicating that 96.05% of non-'1' digits were correctly classified.
+Balanced Accuracy: The average of sensitivity and specificity, giving a more balanced view of performance across classes. The balanced accuracy for digit '0' was 86.83%, while it was 50% for digit '5'.
+Variable Importance:
+
+The top 20 important variables (pixels) were identified, with pixel433, pixel461, and pixel434 being the most significant. These pixels play a crucial role in distinguishing between different digits.
+Naïve Bayes Model
+The Naïve Bayes model was trained and tested on the same sample of 10,000 observations. The overall accuracy achieved was 56.91%.
+
+Confusion Matrix Summary:
+
+The model performed best on digit '0', with a sensitivity of 95.83% and a specificity of 94.35%.
+The model struggled significantly with digit '5', showing a sensitivity of 0% (indicating that no '5' digits were correctly identified).
+The kappa statistic was not provided due to issues with class imbalance and zero variances.
+Model Performance:
+
+Sensitivity (Recall): Digit '0' had a high sensitivity of 95.83%, while digit '5' had a sensitivity of 0%, indicating poor performance on this class.
+Specificity: Digit '7' had a specificity of 99.78%, indicating that the model correctly identified a high proportion of non-'7' digits.
+Balanced Accuracy: The balanced accuracy for digit '6' was 93.98%, indicating good performance, while it was 49.97% for digit '5', reflecting poor performance.
+Distribution of Predictions:
+
+The Naïve Bayes plot shows the density of predictions across different classes, indicating that some digits (e.g., '1' and '9') were predicted more frequently than others.
+Conclusion
+Decision Tree Model: The decision tree model showed moderate performance with an overall accuracy of 59.72%. It performed well on certain digits (e.g., '1' and '0') but struggled with others (e.g., '5').
+Naïve Bayes Model: The Naïve Bayes model achieved an overall accuracy of 56.91%. It performed well on digits like '0' but had significant issues with digits like '5'.
+The decision tree model exhibited slightly better performance compared to the Naïve Bayes model. The choice of model may depend on the specific requirements of the application, such as the importance of recall vs. precision for certain digits.
+
+Further tuning of hyperparameters and experimenting with more advanced models (e.g., Random Forest or Convolutional Neural Networks) could potentially improve performance on this classification task.
+
+```{r}
+
+```
+
