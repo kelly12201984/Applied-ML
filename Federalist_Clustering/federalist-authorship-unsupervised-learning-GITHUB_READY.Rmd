@@ -1,0 +1,248 @@
+---
+title: "federalist-authorship_unsupervised-learning"
+author: "KA"
+date: "2024-05-05"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+# Install required packages
+#install.packages(c("readr", "data.table", "cluster", "ggplot2", "factoextra"))
+
+# Load required libraries
+library(readr)
+library(data.table)
+library(cluster)
+library(ggplot2)
+library(factoextra)
+
+```
+```{r}
+# Load the dataset
+url <- "https://raw.githubusercontent.com/kelly12201984/Applied-ML/main/Federalist_Clustering/fedPapers85.csv"
+if (!url.exists(url)) stop("Could not load dataset from GitHub. Check the URL or your internet connection.")
+FederalistPapers <- read.csv(url)
+#Make a copy labelled original
+FederalistPapers_original <- FederalistPapers
+# Check the structure of the dataset
+head(FederalistPapers)
+str(FederalistPapers)
+summary(FederalistPapers)
+```
+```{r}
+# Check for missing values
+sum(is.na(FederalistPapers))
+
+```
+
+```{r}
+# Remove columns that are unneccessary for clustering
+FedPapers_km <-FederalistPapers[,2:72]
+  # Removed 'author'column
+head(FedPapers_km)
+
+```
+
+```{r}
+
+# Make the file names the row names
+#rownames(FederalistPapers) <- FederalistPapers[, 1]
+
+# Remove the column containing the file names
+FederalistPapers <- FederalistPapers[, -1]
+
+View(FederalistPapers)
+# Now the dataframe is ready for k-means clustering
+
+```
+
+```{r}
+#library(factoextra)
+# Remove non-numeric columns (like filename or author)
+FedPapers_num <- FederalistPapers[, sapply(FederalistPapers, is.numeric)]
+
+# Now use fviz_nbclust on numeric-only data
+fviz_nbclust(FedPapers_num, kmeans, method = "wss")
+fviz_nbclust(FedPapers_num, kmeans, method = "silhouette")
+
+
+```
+
+
+
+
+
+```{r}
+colnames(FederalistPapers)
+ # Selecting only the desired columns
+FedPapers_km <- FederalistPapers[, c("now", "up", "my", "things", "your", "down", "shall", "what", "when", "even", "her", "also", "do", "every", "our", "only", "had", "some", "but", "so", "such", "upon", "his", "if.", "should", "there", "than", "any", "one", "can", "must", "who", "no", "more", "all")]
+head(FedPapers_km)
+```
+
+
+```{r}
+library(factoextra)
+
+# Using the elbow method
+fviz_nbclust(FedPapers_km, kmeans, method = "wss")
+
+# Using the silhouette method
+fviz_nbclust(FedPapers_km, kmeans, method = "silhouette")
+
+```
+
+
+```{r}
+# Get the column sums
+word_sums <- colSums(FedPapers_km)
+
+# Order the column sums from highest to lowest
+word_sums_ordered <- sort(word_sums, decreasing = TRUE)
+
+# Print the ordered column sums
+print(word_sums_ordered)
+```
+
+```{r} 
+#Revising selected columns
+FedPapers_km <- FederalistPapers[, c("shall", "may", "even", "only", "upon","from", "also", "must", "all", "more", "should", "down", "up")]
+```
+
+```{r}
+library(factoextra)
+
+# Using the elbow method
+fviz_nbclust(FedPapers_km, kmeans, method = "wss")
+
+# Using the silhouette method
+fviz_nbclust(FedPapers_km, kmeans, method = "silhouette")
+```
+
+```{r}
+set.seed(80)  # Set seed for reproducibility
+k <- 10 # Number of clusters
+km_model <- kmeans(FedPapers_km, centers = k)
+
+
+```
+
+```{r}
+Clusters <- kmeans(FedPapers_km, 10)
+FedPapers_km$Clusters <- as.factor(Clusters$cluster)
+
+str(Clusters)
+Clusters$centers
+```
+```{r}
+FedPapers_km2 <- FederalistPapers_original
+FedPapers_km2$Clusters <- as.factor(Clusters$cluster)
+```
+
+```{r}
+clusplot(FedPapers_km, FedPapers_km$Clusters, color = TRUE, shade = TRUE, labels = 0, lines = 0)
+```
+
+```{r}
+clusplot(FedPapers_km2, FedPapers_km2$Clusters, color = TRUE, shade = TRUE, labels = 0, lines = 0)
+
+```
+
+```{r}
+ggplot(data = FedPapers_km2, aes(x= author, fill=Clusters))+
+  geom_bar(stat = "count")+
+  labs(title = "K = 7")+
+  theme(plot.title = element_text(hjust = 0.5), text=element_text(size = 15))
+```
+
+#It Appears that Madison and the disputed papers have the most highest and matching count in cluster 6. 
+```{r}
+FedPapers_HAC <- FederalistPapers_original[,c(2:72)]
+##Make the file names the row names.  Need a data frame of numerical values for HAC
+rownames(FedPapers_HAC) <- FedPapers_HAC[,1]
+
+FedPapers_HAC[,1] <- NULL
+```
+
+Interpretation:
+The K-means clustering (k = 10) grouped essays based on function word usage. When visualizing clusters, we observe that Madison’s essays and the disputed papers are often grouped in the same cluster (notably cluster 6), suggesting stylistic similarity. Hamilton’s essays appear more broadly distributed across clusters, while Jay’s and co-authored essays are more distinct.
+
+Insight:
+Cluster assignment patterns align with historical evidence that James Madison is the more likely author of the disputed essays. This aligns with Mosteller and Wallace's original findings.
+
+
+```{r}
+# Compute the distance matrix
+dist_matrix <- dist(FedPapers_HAC)
+#dist_matrix (commented out to prevent overwhelming output)
+
+# Perform hierarchical clustering
+HAC <- hclust(dist_matrix, method = "complete")
+
+# Plot the dendrogram with smaller font size for labels
+plot(HAC, hang = -1, cex = 0.6)
+
+```
+Interpretation:
+The hierarchical clustering dendrograms (complete and single linkage) show that disputed essays are often closer to Madison's essays in the tree. This further supports the finding from K-means.
+```{r}
+##Calculate distance using different methods
+distance <- dist(FedPapers_HAC, method = "euclidean")
+distance2 <- dist(FedPapers_HAC, method = "maximum")
+distance3 <- dist(FedPapers_HAC, method = "manhattan")
+distance4 <- dist(FedPapers_HAC, method = "canberra")
+distance5 <- dist(FedPapers_HAC, method = "binary")
+distance6 <- dist(FedPapers_HAC, method = "minkowski")
+
+
+```
+
+
+```{r}
+summary(distance)
+summary(distance2)
+summary(distance3)
+summary(distance4)
+summary(distance5)
+summary(distance6)
+
+```
+
+```{r}
+HAC <- hclust(distance, method = "complete")
+plot(HAC, cex=0.4, hang=-1)
+rect.hclust(HAC, k=5, border=2:9)
+```
+```{r}
+HAC2 <- hclust(distance, method = "single")
+plot(HAC2, cex=0.6)
+rect.hclust(HAC, k=5, border=2:8)
+```
+Conclusion:
+Unsupervised learning methods like K-means and hierarchical clustering proved valuable in exploring historical text authorship. While not definitive, the patterns observed — including cluster groupings and proximity in dendrograms — support the hypothesis that Madison is the more likely author of the disputed Federalist Papers.
+
