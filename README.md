@@ -1,5 +1,6 @@
 Applied Machine Learning Projects:
-This repository showcases hands-on machine learning projects completed as part of my graduate coursework in Applied Data Science at Syracuse University. The goal of each project was to apply machine learning methods to real-world datasets and extract meaningful insights using interpretable models.
+This repository showcases hands-on machine learning projects I've completed. 
+The goal of each project was to apply machine learning methods to real-world datasets and extract meaningful insights using interpretable models.
 
 Projects Included
 🧠 The Federalist Papers: Clustering for Authorship Attribution
