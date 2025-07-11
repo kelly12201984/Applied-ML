@@ -2,6 +2,9 @@ Applied Machine Learning Projects:
 This repository showcases hands-on machine learning projects I've completed. 
 The goal of each project was to apply machine learning methods to real-world datasets and extract meaningful insights using interpretable models.
 
+<img width="843" height="532" alt="image" src="https://github.com/user-attachments/assets/96c0d5ab-970c-4495-b1be-0230f16a3d02" />
+
+
 Projects Included
 🧠 The Federalist Papers: Clustering for Authorship Attribution
 Goal: Determine the likely authors (Hamilton vs. Madison) of disputed essays using clustering methods.
