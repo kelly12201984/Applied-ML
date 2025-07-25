@@ -1,6 +1,5 @@
 Applied Machine Learning Projects:
-This repository showcases hands-on machine learning projects I've completed. 
-The goal of each project was to apply machine learning methods to real-world datasets and extract meaningful insights using interpretable models.
+Used machine learning to uncover meaningful patterns in messy, real-world data — with a focus on transparency, explainability, and real-world usability.
 
 <img width="843" height="532" alt="image" src="https://github.com/user-attachments/assets/96c0d5ab-970c-4495-b1be-0230f16a3d02" />
 
