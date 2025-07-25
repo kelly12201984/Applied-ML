@@ -1,5 +1,6 @@
 Applied Machine Learning Projects:
 Used machine learning to uncover meaningful patterns in messy, real-world data — with a focus on transparency, explainability, and real-world usability.
+Tuned Random Forest and RBF-kernel SVM models achieved >92% accuracy. Poor performance from polynomial SVMs highlights the importance of kernel selection and cost tuning. This model comparison informed our final model choice based on accuracy and stability.
 
 <img width="843" height="532" alt="image" src="https://github.com/user-attachments/assets/96c0d5ab-970c-4495-b1be-0230f16a3d02" />
 
